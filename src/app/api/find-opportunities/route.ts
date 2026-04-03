@@ -1,6 +1,6 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const client = new Anthropic();
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 const FINDER_PROMPT = `You are an autonomous business scout. Research and score 5 real small business opportunities someone can start with low capital (ideally under $500) and reach first dollar within 30 days.
 
@@ -10,7 +10,7 @@ Operator profile:
 - Limited budget — prefers $0 startup
 - Has hustle skills, no corporate experience needed
 
-Use web search to validate REAL demand before scoring anything. Look for:
+Use Google Search to validate REAL demand before scoring anything. Look for:
 - Forum posts, Reddit threads, marketplace listings proving demand
 - Actual income reports from real operators
 - Startup cost breakdowns with real numbers
@@ -24,7 +24,7 @@ Score each on these dimensions (1-10, higher = better):
 - operationalSimplicity: Can one person run it solo
 - repeatCustomerPotential: Do customers return or refer
 
-Return ONLY valid JSON with this exact structure:
+Return ONLY valid JSON, no markdown, no extra text:
 {
   "opportunities": [
     {
@@ -56,14 +56,14 @@ Return ONLY valid JSON with this exact structure:
   ]
 }
 
-No dropshipping, MLM, crypto, or passive income fantasies. Real businesses only.`;
+No dropshipping, MLM, crypto, or passive income fantasies. Real businesses with proven markets only.`;
 
 export async function POST(request: Request) {
   const { query } = await request.json().catch(() => ({ query: null }));
 
   const userMsg = query
-    ? `Research and find 5 business opportunities focused on: ${query}. Validate each with real data.`
-    : `Find 5 of the best businesses I can start this week in Atlantic Canada (PEI) with under $500. Validate demand with web search and give me real numbers.`;
+    ? `Research and find 5 business opportunities focused on: ${query}. Search for real demand data and validate each before scoring.`
+    : `Find 5 of the best businesses I can start this week in Atlantic Canada (PEI) with under $500. Search for real demand, income reports, and startup costs. Give me real numbers.`;
 
   const encoder = new TextEncoder();
 
@@ -73,30 +73,24 @@ export async function POST(request: Request) {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
 
       try {
-        send({ type: "status", message: "Scanning markets for opportunities..." });
+        send({ type: "status", message: "Searching the web for opportunities..." });
 
-        // Run the research with web search tool
-        const response = await client.messages.create({
-          model: "claude-opus-4-6",
-          max_tokens: 4096,
-          system: FINDER_PROMPT,
+        const model = genAI.getGenerativeModel({
+          model: "gemini-2.0-flash",
+          // Google Search grounding for live web research
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          tools: [{ type: "web_search_20260209", name: "web_search" }] as any,
-          messages: [{ role: "user", content: userMsg }],
+          tools: [{ googleSearch: {} }] as any,
+          systemInstruction: FINDER_PROMPT,
         });
 
-        send({ type: "status", message: "Validating and scoring each opportunity..." });
+        const result = await model.generateContent(userMsg);
+        const text = result.response.text();
 
-        // Pull out the final text block
-        let resultText = "";
-        for (const block of response.content) {
-          if (block.type === "text") {
-            resultText += block.text;
-          }
-        }
+        send({ type: "status", message: "Scoring and ranking opportunities..." });
 
-        const jsonMatch = resultText.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) throw new Error("Agent returned no structured data");
+        // Extract JSON from response
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error("No structured data in response");
 
         const parsed = JSON.parse(jsonMatch[0]);
         send({ type: "result", data: parsed });

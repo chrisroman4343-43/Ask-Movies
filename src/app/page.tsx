@@ -71,7 +71,7 @@ export default function Home() {
 
         <div className="flex items-center gap-1.5 text-xs text-green-400">
           <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-          <span className="hidden sm:inline">Live · Claude Opus 4.6</span>
+          <span className="hidden sm:inline">Live · Gemini 2.0 Flash · Free</span>
         </div>
       </div>
 
