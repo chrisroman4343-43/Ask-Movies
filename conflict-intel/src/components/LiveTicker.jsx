@@ -15,7 +15,7 @@ function AlertItem({ alert }) {
 
 export default function LiveTicker() {
   return (
-    <div className="bg-red-900/40 border-b border-red-800/50 py-2 overflow-hidden shrink-0">
+    <div className="bg-red-900/40 border-b border-red-800/50 py-2 overflow-hidden shrink-0 select-none">
       {/*
         Seamless marquee: render the alert list TWICE inside one flex row.
         The animation runs translateX(0) → translateX(-50%), which equals

@@ -2,6 +2,7 @@ import { AlertTriangle, Zap, Map } from 'lucide-react'
 import { newsChannels } from '../data/newsChannels'
 import { useState } from 'react'
 import { MapProvider, useMapContext } from '../context/MapContext'
+import ErrorBoundary from './ErrorBoundary'
 import VideoPlayer from './VideoPlayer'
 import ChannelSelector from './ChannelSelector'
 import IntelFeed from './IntelFeed'
@@ -51,7 +52,9 @@ function MainContentInner() {
             Live Broadcast
           </p>
         </div>
-        <VideoPlayer url={activeChannel.url} channelName={activeChannel.name} />
+        <ErrorBoundary label="Video Player">
+          <VideoPlayer url={activeChannel.url} channelName={activeChannel.name} />
+        </ErrorBoundary>
         <div className="mt-3">
           <ChannelSelector
             channels={newsChannels}
@@ -70,7 +73,7 @@ function MainContentInner() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`
-                flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-semibold
+                flex-1 flex items-center justify-center gap-1.5 py-3 text-[11px] font-semibold
                 uppercase tracking-widest transition-all relative
                 ${isActive ? 'text-white' : 'text-zinc-600 hover:text-zinc-400'}
               `}
@@ -87,8 +90,16 @@ function MainContentInner() {
 
       {/* Tab content */}
       <div className="flex-1 overflow-hidden">
-        {activeTab === 'feed' && <IntelFeed />}
-        {activeTab === 'map' && <ConflictMap />}
+        {activeTab === 'feed' && (
+          <ErrorBoundary label="Intel Feed">
+            <IntelFeed />
+          </ErrorBoundary>
+        )}
+        {activeTab === 'map' && (
+          <ErrorBoundary label="Tactical Map">
+            <ConflictMap />
+          </ErrorBoundary>
+        )}
       </div>
 
       {/* Threat Assessment placeholder — only on feed tab */}

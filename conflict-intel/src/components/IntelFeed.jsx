@@ -1,11 +1,27 @@
 import { useEffect, useState } from 'react'
 import { io } from 'socket.io-client'
-import { Zap, ExternalLink, MapPin } from 'lucide-react'
+import { Zap, ExternalLink, MapPin, Loader2 } from 'lucide-react'
 import { useMapContext } from '../context/MapContext'
+
+function SkeletonCard() {
+  return (
+    <div className="bg-zinc-900/50 border border-zinc-800/80 rounded-lg p-3 animate-pulse">
+      <div className="flex items-center gap-2 mb-2">
+        <div className="h-2 w-16 bg-zinc-800 rounded" />
+        <div className="ml-auto h-2 w-20 bg-zinc-800 rounded" />
+      </div>
+      <div className="space-y-1.5">
+        <div className="h-3 w-full bg-zinc-800 rounded" />
+        <div className="h-3 w-3/4 bg-zinc-800 rounded" />
+      </div>
+    </div>
+  )
+}
 
 export default function IntelFeed() {
   const [alerts, setAlerts] = useState([])
   const [connected, setConnected] = useState(false)
+  const [initialLoad, setInitialLoad] = useState(true)
   const { focusOnLocation } = useMapContext()
 
   useEffect(() => {
@@ -17,7 +33,12 @@ export default function IntelFeed() {
     })
 
     socket.on('connect', () => setConnected(true))
-    socket.on('intelAlert', (alert) => setAlerts((prev) => [alert, ...prev]))
+
+    socket.on('intelAlert', (alert) => {
+      setAlerts((prev) => [alert, ...prev])
+      setInitialLoad(false)
+    })
+
     socket.on('disconnect', () => setConnected(false))
 
     return () => socket.disconnect()
@@ -65,12 +86,29 @@ export default function IntelFeed() {
       </div>
 
       {/* Alerts list */}
-      <div className="flex-1 overflow-y-auto py-2">
-        {alerts.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-[11px] text-zinc-600 text-center px-6">
-              {connected ? 'Awaiting intelligence feed...' : 'Connecting to server...'}
-            </p>
+      <div className="flex-1 overflow-y-auto scrollbar-hide py-2">
+        {/* Loading skeletons on first boot */}
+        {initialLoad && alerts.length === 0 ? (
+          <div className="space-y-1.5 px-3">
+            {connected ? (
+              <>
+                <div className="flex items-center justify-center gap-2 py-3">
+                  <Loader2 size={12} className="text-zinc-600 animate-spin" />
+                  <p className="text-[10px] text-zinc-600">Loading intelligence feed...</p>
+                </div>
+                <SkeletonCard />
+                <SkeletonCard />
+                <SkeletonCard />
+                <SkeletonCard />
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-full py-8">
+                <div className="text-center">
+                  <Loader2 size={16} className="text-zinc-700 animate-spin mx-auto mb-2" />
+                  <p className="text-[11px] text-zinc-600">Connecting to server...</p>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="space-y-1.5 px-3">
@@ -91,12 +129,12 @@ export default function IntelFeed() {
                         BREAKING
                       </span>
                     )}
-                    <span className="ml-auto text-[9px] text-zinc-700 tabular-nums">
+                    <span className="ml-auto text-[9px] text-zinc-700 tabular-nums shrink-0">
                       {formatDate(alert.timestamp)} {formatTime(alert.timestamp)}
                     </span>
                   </div>
 
-                  {/* Headline */}
+                  {/* Headline — clamped to 2 lines */}
                   {alert.link ? (
                     <a
                       href={alert.link}
@@ -104,7 +142,7 @@ export default function IntelFeed() {
                       rel="noopener noreferrer"
                       className="group/link flex items-start gap-1.5"
                     >
-                      <p className="text-[12px] font-medium text-zinc-300 leading-snug group-hover/link:text-white transition-colors flex-1">
+                      <p className="text-[12px] font-medium text-zinc-300 leading-snug group-hover/link:text-white transition-colors flex-1 line-clamp-2">
                         {alert.headline}
                       </p>
                       <ExternalLink
@@ -113,12 +151,12 @@ export default function IntelFeed() {
                       />
                     </a>
                   ) : (
-                    <p className="text-[12px] font-medium text-zinc-300 leading-snug">
+                    <p className="text-[12px] font-medium text-zinc-300 leading-snug line-clamp-2">
                       {alert.headline}
                     </p>
                   )}
 
-                  {/* View on Map button — only if coordinates were assigned */}
+                  {/* View on Map button — thumb-friendly touch target */}
                   {hasCoords && (
                     <button
                       onClick={(e) => {
@@ -126,7 +164,7 @@ export default function IntelFeed() {
                         e.stopPropagation()
                         focusOnLocation(alert.lat, alert.lng, alert.headline)
                       }}
-                      className="mt-2 flex items-center gap-1 text-[9px] font-medium text-zinc-600 hover:text-blue-400 transition-colors uppercase tracking-wide"
+                      className="mt-2 flex items-center gap-1.5 text-[9px] font-medium text-zinc-600 hover:text-blue-400 active:text-blue-300 transition-colors uppercase tracking-wide py-1.5 -mx-1 px-1 rounded"
                     >
                       <MapPin size={9} />
                       View on Map

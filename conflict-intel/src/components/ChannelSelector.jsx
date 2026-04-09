@@ -2,7 +2,7 @@ import { Radio, Globe } from 'lucide-react'
 
 export default function ChannelSelector({ channels, activeId, onSelect }) {
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+    <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
       {channels.map(ch => {
         const isActive = ch.id === activeId
         return (
@@ -10,8 +10,8 @@ export default function ChannelSelector({ channels, activeId, onSelect }) {
             key={ch.id}
             onClick={() => onSelect(ch.id)}
             className={`
-              flex items-center gap-2 shrink-0 px-3 py-2 rounded-lg text-xs font-medium
-              border transition-all
+              flex items-center gap-2 shrink-0 px-3 py-2.5 rounded-lg text-xs font-medium
+              border transition-all min-h-[40px]
               ${isActive
                 ? 'bg-red-900/50 border-red-700/60 text-red-200'
                 : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-300'

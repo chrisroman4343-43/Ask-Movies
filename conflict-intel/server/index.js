@@ -29,7 +29,6 @@ const RSS_FEEDS = [
   { url: 'https://www.defensenews.com/arc/outboundfeeds/rss/category/global/', source: 'Defense News' },
 ]
 
-// Keyword → approximate centroid coordinates for known conflict theatres
 const GEO_RULES = [
   { keywords: ['Gaza', 'Hamas', 'Palestinian', 'West Bank'], lat: 31.5, lng: 34.4 },
   { keywords: ['Israel', 'Israeli', 'Tel Aviv', 'Jerusalem', 'IDF'], lat: 31.7, lng: 35.2 },
@@ -82,14 +81,12 @@ async function fetchFeed(feed) {
         ...assignCoordinates(headline),
       }
     })
-  } catch (err) {
-    console.error(`Failed to fetch ${feed.source}: ${err.message}`)
+  } catch {
     return []
   }
 }
 
 async function fetchAndEmitFeeds() {
-  console.log('Polling RSS feeds...')
   const results = await Promise.allSettled(RSS_FEEDS.map(fetchFeed))
 
   const allItems = results
@@ -97,32 +94,23 @@ async function fetchAndEmitFeeds() {
     .flatMap(r => r.value)
     .filter(item => item.id && item.headline)
 
-  let newCount = 0
   for (const item of allItems) {
     if (!emittedIds.has(item.id)) {
       emittedIds.add(item.id)
       io.emit('intelAlert', item)
-      newCount++
     }
   }
-
-  console.log(`Emitted ${newCount} new articles (${emittedIds.size} total seen)`)
 }
 
-io.on('connection', (socket) => {
-  console.log(`Client connected: ${socket.id}`)
-  socket.on('disconnect', () => {
-    console.log(`Client disconnected: ${socket.id}`)
-  })
-})
+io.on('connection', () => {})
 
 fetchAndEmitFeeds()
 setInterval(fetchAndEmitFeeds, 120_000)
 
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.json({ status: 'ok', seenArticles: emittedIds.size })
 })
 
 app.listen(PORT, () => {
-  console.log(`Shadow Wire server listening on port ${PORT}`)
+  process.stdout.write(`Shadow Wire server listening on port ${PORT}\n`)
 })
