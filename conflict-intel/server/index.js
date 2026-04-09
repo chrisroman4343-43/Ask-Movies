@@ -1,6 +1,7 @@
 import express from 'express'
 import { Server } from 'socket.io'
 import cors from 'cors'
+import RSSParser from 'rss-parser'
 
 const app = express()
 const PORT = 3001
@@ -15,25 +16,58 @@ const io = new Server(app, {
   },
 })
 
-// Mock alert templates
-const mockHeadlines = [
-  'Unverified reports of localized disruptions detected in Eastern sectors',
-  'Intelligence chatter elevated across multiple monitored frequencies',
-  'Civilian displacement signals detected in border region monitoring',
-  'Strategic asset positioning changes observed via satellite imagery',
-  'Encrypted communications spike detected in surveillance network',
-  'Cross-border movement patterns showing unusual activity',
-  'Supply line disruptions reported by field assets',
-  'Telecommunications infrastructure degradation in theater zone',
+const parser = new RSSParser({
+  timeout: 10000,
+  headers: {
+    'User-Agent': 'Mozilla/5.0 (compatible; ConflictIntel/1.0)',
+  },
+})
+
+const RSS_FEEDS = [
+  { url: 'https://www.aljazeera.com/xml/rss/all.xml', source: 'Al Jazeera' },
+  { url: 'http://feeds.bbci.co.uk/news/world/rss.xml', source: 'BBC World' },
+  { url: 'https://www.defensenews.com/arc/outboundfeeds/rss/category/global/', source: 'Defense News' },
 ]
 
-const mockSources = [
-  'SIGINT Monitor',
-  'HUMINT Network',
-  'Satellite Feed',
-  'Telegram Channel Monitor',
-  'Scanner Audio Relay',
-]
+const emittedIds = new Set()
+
+async function fetchFeed(feed) {
+  try {
+    const result = await parser.parseURL(feed.url)
+    return result.items.map(item => ({
+      id: item.guid || item.link || item.id,
+      source: feed.source,
+      headline: item.title,
+      timestamp: item.pubDate || item.isoDate || new Date().toISOString(),
+      link: item.link,
+      isBreaking: false,
+    }))
+  } catch (err) {
+    console.error(`Failed to fetch ${feed.source}: ${err.message}`)
+    return []
+  }
+}
+
+async function fetchAndEmitFeeds() {
+  console.log('Polling RSS feeds...')
+  const results = await Promise.allSettled(RSS_FEEDS.map(fetchFeed))
+
+  const allItems = results
+    .filter(r => r.status === 'fulfilled')
+    .flatMap(r => r.value)
+    .filter(item => item.id && item.headline)
+
+  let newCount = 0
+  for (const item of allItems) {
+    if (!emittedIds.has(item.id)) {
+      emittedIds.add(item.id)
+      io.emit('intelAlert', item)
+      newCount++
+    }
+  }
+
+  console.log(`Emitted ${newCount} new articles (${emittedIds.size} total seen)`)
+}
 
 io.on('connection', (socket) => {
   console.log(`Client connected: ${socket.id}`)
@@ -43,26 +77,12 @@ io.on('connection', (socket) => {
   })
 })
 
-// Emit mock alerts every 15 seconds
-setInterval(() => {
-  const headline =
-    mockHeadlines[Math.floor(Math.random() * mockHeadlines.length)]
-  const source = mockSources[Math.floor(Math.random() * mockSources.length)]
-
-  const alert = {
-    id: Date.now(),
-    source,
-    headline,
-    timestamp: new Date().toISOString(),
-    isBreaking: Math.random() > 0.6, // 40% chance of breaking
-  }
-
-  console.log(`Emitting alert: ${alert.headline}`)
-  io.emit('intelAlert', alert)
-}, 15000)
+// Initial fetch on startup, then every 2 minutes
+fetchAndEmitFeeds()
+setInterval(fetchAndEmitFeeds, 120_000)
 
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok' })
+  res.json({ status: 'ok', seenArticles: emittedIds.size })
 })
 
 app.listen(PORT, () => {
