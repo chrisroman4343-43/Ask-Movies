@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { MapPin, AlertTriangle } from 'lucide-react'
+import { AlertTriangle, Zap, Map } from 'lucide-react'
 import { newsChannels } from '../data/newsChannels'
 import VideoPlayer from './VideoPlayer'
 import ChannelSelector from './ChannelSelector'
 import IntelFeed from './IntelFeed'
+import ConflictMap from './ConflictMap'
 
 function PlaceholderCard({ icon: Icon, title, description, badge }) {
   return (
@@ -23,14 +24,20 @@ function PlaceholderCard({ icon: Icon, title, description, badge }) {
       </div>
       <p className="text-xs text-zinc-600 leading-relaxed">{description}</p>
       <div className="mt-3 h-[72px] bg-zinc-950/60 rounded-lg border border-zinc-800/60 flex items-center justify-center">
-        <p className="text-[10px] text-zinc-700 tracking-wide uppercase">Coming in Phase 3</p>
+        <p className="text-[10px] text-zinc-700 tracking-wide uppercase">Coming Soon</p>
       </div>
     </div>
   )
 }
 
+const TABS = [
+  { id: 'feed', label: 'Intel Feed', icon: Zap },
+  { id: 'map', label: 'Tactical Map', icon: Map },
+]
+
 export default function MainContent() {
   const [activeChannelId, setActiveChannelId] = useState(newsChannels[0]?.id)
+  const [activeTab, setActiveTab] = useState('feed')
   const activeChannel = newsChannels.find(ch => ch.id === activeChannelId) || newsChannels[0]
 
   return (
@@ -46,7 +53,6 @@ export default function MainContent() {
 
         <VideoPlayer url={activeChannel.url} channelName={activeChannel.name} />
 
-        {/* Channel selector strip */}
         <div className="mt-3">
           <ChannelSelector
             channels={newsChannels}
@@ -56,29 +62,47 @@ export default function MainContent() {
         </div>
       </div>
 
-      {/* OSINT Feed */}
-      <div className="flex-1 overflow-hidden border-t border-zinc-800/60">
-        <IntelFeed />
+      {/* Sticky tab bar */}
+      <div className="shrink-0 flex border-b border-zinc-800 bg-zinc-950">
+        {TABS.map(tab => {
+          const isActive = activeTab === tab.id
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`
+                flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-semibold
+                uppercase tracking-widest transition-all relative
+                ${isActive ? 'text-white' : 'text-zinc-600 hover:text-zinc-400'}
+              `}
+            >
+              <tab.icon size={11} />
+              {tab.label}
+              {isActive && (
+                <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-white rounded-t" />
+              )}
+            </button>
+          )
+        })}
       </div>
 
-      {/* Remaining module placeholders */}
-      <div className="px-4 py-3 space-y-3 border-t border-zinc-800/60 shrink-0">
-        <p className="text-[10px] font-semibold text-zinc-600 tracking-widest uppercase">
-          More Modules
-        </p>
-        <PlaceholderCard
-          icon={MapPin}
-          title="Conflict Map"
-          description="Real-time geolocated incident overlay with theatre-by-theatre breakdown."
-          badge="Soon"
-        />
-        <PlaceholderCard
-          icon={AlertTriangle}
-          title="Threat Assessments"
-          description="Analyst-curated threat level indicators per region, updated hourly."
-          badge="Soon"
-        />
+      {/* Tab content */}
+      <div className="flex-1 overflow-hidden">
+        {activeTab === 'feed' && <IntelFeed />}
+        {activeTab === 'map' && <ConflictMap />}
       </div>
+
+      {/* Threat Assessment placeholder — only shown on feed tab to avoid stacking below map */}
+      {activeTab === 'feed' && (
+        <div className="px-4 py-3 border-t border-zinc-800/60 shrink-0">
+          <PlaceholderCard
+            icon={AlertTriangle}
+            title="Threat Assessments"
+            description="Analyst-curated threat level indicators per region, updated hourly."
+            badge="Soon"
+          />
+        </div>
+      )}
     </main>
   )
 }

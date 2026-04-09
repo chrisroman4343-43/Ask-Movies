@@ -19,3 +19,19 @@ html, body, #root {
 
 /* Pause marquee on hover so users can read an alert */
 .marquee-track:hover { animation-play-state: paused; }
+
+/* Strip Leaflet's default white popup chrome */
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+.leaflet-popup-content {
+  margin: 0 !important;
+}
+
+/* Hide Leaflet attribution (we set it in the component) */
+.leaflet-control-attribution {
+  display: none;
+}
