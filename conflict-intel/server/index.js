@@ -4,14 +4,19 @@ import cors from 'cors'
 import RSSParser from 'rss-parser'
 
 const app = express()
-const PORT = 3001
+const PORT = process.env.PORT || 3001
 
 app.use(cors())
 app.use(express.json())
 
+const ALLOWED_ORIGINS = [
+  'http://localhost:5174',
+  process.env.FRONTEND_URL,
+].filter(Boolean)
+
 const io = new Server(app, {
   cors: {
-    origin: 'http://localhost:5174',
+    origin: ALLOWED_ORIGINS,
     methods: ['GET', 'POST'],
   },
 })

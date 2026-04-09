@@ -18,6 +18,8 @@ function SkeletonCard() {
   )
 }
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
+
 export default function IntelFeed() {
   const [alerts, setAlerts] = useState([])
   const [connected, setConnected] = useState(false)
@@ -25,7 +27,7 @@ export default function IntelFeed() {
   const { focusOnLocation } = useMapContext()
 
   useEffect(() => {
-    const socket = io('http://localhost:3001', {
+    const socket = io(BACKEND_URL, {
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
