@@ -1,6 +1,7 @@
-import { useState } from 'react'
 import { AlertTriangle, Zap, Map } from 'lucide-react'
 import { newsChannels } from '../data/newsChannels'
+import { useState } from 'react'
+import { MapProvider, useMapContext } from '../context/MapContext'
 import VideoPlayer from './VideoPlayer'
 import ChannelSelector from './ChannelSelector'
 import IntelFeed from './IntelFeed'
@@ -35,9 +36,9 @@ const TABS = [
   { id: 'map', label: 'Tactical Map', icon: Map },
 ]
 
-export default function MainContent() {
+function MainContentInner() {
   const [activeChannelId, setActiveChannelId] = useState(newsChannels[0]?.id)
-  const [activeTab, setActiveTab] = useState('feed')
+  const { activeTab, setActiveTab } = useMapContext()
   const activeChannel = newsChannels.find(ch => ch.id === activeChannelId) || newsChannels[0]
 
   return (
@@ -50,9 +51,7 @@ export default function MainContent() {
             Live Broadcast
           </p>
         </div>
-
         <VideoPlayer url={activeChannel.url} channelName={activeChannel.name} />
-
         <div className="mt-3">
           <ChannelSelector
             channels={newsChannels}
@@ -92,7 +91,7 @@ export default function MainContent() {
         {activeTab === 'map' && <ConflictMap />}
       </div>
 
-      {/* Threat Assessment placeholder — only shown on feed tab to avoid stacking below map */}
+      {/* Threat Assessment placeholder — only on feed tab */}
       {activeTab === 'feed' && (
         <div className="px-4 py-3 border-t border-zinc-800/60 shrink-0">
           <PlaceholderCard
@@ -104,5 +103,13 @@ export default function MainContent() {
         </div>
       )}
     </main>
+  )
+}
+
+export default function MainContent() {
+  return (
+    <MapProvider>
+      <MainContentInner />
+    </MapProvider>
   )
 }

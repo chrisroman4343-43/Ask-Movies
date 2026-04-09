@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { io } from 'socket.io-client'
-import { Zap, ExternalLink } from 'lucide-react'
+import { Zap, ExternalLink, MapPin } from 'lucide-react'
+import { useMapContext } from '../context/MapContext'
 
 export default function IntelFeed() {
   const [alerts, setAlerts] = useState([])
   const [connected, setConnected] = useState(false)
+  const { focusOnLocation } = useMapContext()
 
   useEffect(() => {
     const socket = io('http://localhost:3001', {
@@ -14,21 +16,11 @@ export default function IntelFeed() {
       reconnectionAttempts: 5,
     })
 
-    socket.on('connect', () => {
-      setConnected(true)
-    })
+    socket.on('connect', () => setConnected(true))
+    socket.on('intelAlert', (alert) => setAlerts((prev) => [alert, ...prev]))
+    socket.on('disconnect', () => setConnected(false))
 
-    socket.on('intelAlert', (alert) => {
-      setAlerts((prev) => [alert, ...prev])
-    })
-
-    socket.on('disconnect', () => {
-      setConnected(false)
-    })
-
-    return () => {
-      socket.disconnect()
-    }
+    return () => socket.disconnect()
   }, [])
 
   const formatTime = (rawTimestamp) => {
@@ -82,49 +74,67 @@ export default function IntelFeed() {
           </div>
         ) : (
           <div className="space-y-1.5 px-3">
-            {alerts.map((alert) => (
-              <div
-                key={alert.id}
-                className="group bg-zinc-900/50 border border-zinc-800/80 rounded-lg p-3 hover:border-zinc-700 hover:bg-zinc-900 transition-all"
-              >
-                {/* Source + badges row */}
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className="text-[9px] font-medium text-zinc-500 uppercase tracking-wide">
-                    {alert.source}
-                  </span>
-                  {alert.isBreaking && (
-                    <span className="text-[9px] font-bold bg-red-900/60 text-red-300 border border-red-800/50 px-1.5 py-0.5 rounded">
-                      BREAKING
+            {alerts.map((alert) => {
+              const hasCoords = alert.lat != null && alert.lng != null
+              return (
+                <div
+                  key={alert.id}
+                  className="group bg-zinc-900/50 border border-zinc-800/80 rounded-lg p-3 hover:border-zinc-700 hover:bg-zinc-900 transition-all"
+                >
+                  {/* Source + badges + timestamp row */}
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-[9px] font-medium text-zinc-500 uppercase tracking-wide">
+                      {alert.source}
                     </span>
-                  )}
-                  <span className="ml-auto text-[9px] text-zinc-700 tabular-nums">
-                    {formatDate(alert.timestamp)} {formatTime(alert.timestamp)}
-                  </span>
-                </div>
+                    {alert.isBreaking && (
+                      <span className="text-[9px] font-bold bg-red-900/60 text-red-300 border border-red-800/50 px-1.5 py-0.5 rounded">
+                        BREAKING
+                      </span>
+                    )}
+                    <span className="ml-auto text-[9px] text-zinc-700 tabular-nums">
+                      {formatDate(alert.timestamp)} {formatTime(alert.timestamp)}
+                    </span>
+                  </div>
 
-                {/* Headline */}
-                {alert.link ? (
-                  <a
-                    href={alert.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group/link flex items-start gap-1.5"
-                  >
-                    <p className="text-[12px] font-medium text-zinc-300 leading-snug group-hover/link:text-white transition-colors flex-1">
+                  {/* Headline */}
+                  {alert.link ? (
+                    <a
+                      href={alert.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group/link flex items-start gap-1.5"
+                    >
+                      <p className="text-[12px] font-medium text-zinc-300 leading-snug group-hover/link:text-white transition-colors flex-1">
+                        {alert.headline}
+                      </p>
+                      <ExternalLink
+                        size={10}
+                        className="text-zinc-700 group-hover/link:text-zinc-400 transition-colors mt-0.5 shrink-0"
+                      />
+                    </a>
+                  ) : (
+                    <p className="text-[12px] font-medium text-zinc-300 leading-snug">
                       {alert.headline}
                     </p>
-                    <ExternalLink
-                      size={10}
-                      className="text-zinc-700 group-hover/link:text-zinc-400 transition-colors mt-0.5 shrink-0"
-                    />
-                  </a>
-                ) : (
-                  <p className="text-[12px] font-medium text-zinc-300 leading-snug">
-                    {alert.headline}
-                  </p>
-                )}
-              </div>
-            ))}
+                  )}
+
+                  {/* View on Map button — only if coordinates were assigned */}
+                  {hasCoords && (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        focusOnLocation(alert.lat, alert.lng, alert.headline)
+                      }}
+                      className="mt-2 flex items-center gap-1 text-[9px] font-medium text-zinc-600 hover:text-blue-400 transition-colors uppercase tracking-wide"
+                    >
+                      <MapPin size={9} />
+                      View on Map
+                    </button>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
       </div>
