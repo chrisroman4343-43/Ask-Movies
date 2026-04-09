@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { MapPin, Activity, AlertTriangle } from 'lucide-react'
+import { MapPin, AlertTriangle } from 'lucide-react'
 import { newsChannels } from '../data/newsChannels'
 import VideoPlayer from './VideoPlayer'
 import ChannelSelector from './ChannelSelector'
+import IntelFeed from './IntelFeed'
 
 function PlaceholderCard({ icon: Icon, title, description, badge }) {
   return (
@@ -33,9 +34,9 @@ export default function MainContent() {
   const activeChannel = newsChannels.find(ch => ch.id === activeChannelId) || newsChannels[0]
 
   return (
-    <main className="flex-1 overflow-y-auto bg-zinc-950">
+    <main className="flex-1 overflow-hidden bg-zinc-950 flex flex-col">
       {/* Live video player */}
-      <div className="px-4 pt-4 pb-3">
+      <div className="px-4 pt-4 pb-3 shrink-0">
         <div className="flex items-center gap-2 mb-2.5">
           <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
           <p className="text-[10px] font-semibold text-red-400 tracking-widest uppercase">
@@ -55,21 +56,20 @@ export default function MainContent() {
         </div>
       </div>
 
-      {/* Module placeholders */}
-      <div className="px-4 py-4 space-y-3 border-t border-zinc-800/60">
+      {/* OSINT Feed */}
+      <div className="flex-1 overflow-hidden border-t border-zinc-800/60">
+        <IntelFeed />
+      </div>
+
+      {/* Remaining module placeholders */}
+      <div className="px-4 py-3 space-y-3 border-t border-zinc-800/60 shrink-0">
         <p className="text-[10px] font-semibold text-zinc-600 tracking-widest uppercase">
-          Intel Modules
+          More Modules
         </p>
         <PlaceholderCard
           icon={MapPin}
           title="Conflict Map"
           description="Real-time geolocated incident overlay with theatre-by-theatre breakdown."
-          badge="Soon"
-        />
-        <PlaceholderCard
-          icon={Activity}
-          title="OSINT Feed"
-          description="Aggregated raw OSINT sources — Telegram channels, X/Twitter lists, scanner audio."
           badge="Soon"
         />
         <PlaceholderCard
