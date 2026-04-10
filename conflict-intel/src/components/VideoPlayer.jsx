@@ -90,7 +90,7 @@ export default function VideoPlayer({ url, channelName }) {
   }
 
   return (
-    <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden border border-zinc-800">
+    <div className="relative w-full aspect-video bg-black rounded-md overflow-hidden border border-cyan-500/40 hud-frame-4" style={{ boxShadow: '0 0 24px rgba(34,211,238,0.18), inset 0 0 18px rgba(34,211,238,0.06)' }}>
       {/* Video element */}
       <video
         ref={videoRef}
@@ -100,37 +100,43 @@ export default function VideoPlayer({ url, channelName }) {
         autoPlay
       />
 
+      {/* Corner cross-hairs (targeting) */}
+      <div className="pointer-events-none absolute top-2 left-2 w-3 h-3 border-t border-l border-cyan-300/80" />
+      <div className="pointer-events-none absolute top-2 right-2 w-3 h-3 border-t border-r border-cyan-300/80" />
+      <div className="pointer-events-none absolute bottom-2 left-2 w-3 h-3 border-b border-l border-cyan-300/80" />
+      <div className="pointer-events-none absolute bottom-2 right-2 w-3 h-3 border-b border-r border-cyan-300/80" />
+
       {/* Loading overlay */}
       {status === 'loading' && (
-        <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center gap-2">
-          <Loader2 size={24} className="text-red-400 animate-spin" />
-          <p className="text-xs text-zinc-400">Connecting to stream...</p>
+        <div className="absolute inset-0 bg-jarvis-bg/85 flex flex-col items-center justify-center gap-2">
+          <Loader2 size={24} className="text-cyan-300 animate-spin" />
+          <p className="text-[10px] text-cyan-400 font-mono tracking-widest uppercase">Connecting to stream…</p>
         </div>
       )}
 
       {/* Error overlay */}
       {status === 'error' && (
-        <div className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center gap-2 px-4">
-          <AlertTriangle size={24} className="text-red-500" />
-          <p className="text-xs text-red-300 text-center">{errorMsg || 'Stream unavailable'}</p>
-          <p className="text-[10px] text-zinc-600">Some streams may be geo-restricted</p>
+        <div className="absolute inset-0 bg-jarvis-bg/90 flex flex-col items-center justify-center gap-2 px-4">
+          <AlertTriangle size={24} className="text-amber-400" />
+          <p className="text-[11px] text-amber-200 text-center font-mono">{errorMsg || 'Stream unavailable'}</p>
+          <p className="text-[9px] text-cyan-600/70 font-mono tracking-wider uppercase">Some streams may be geo-restricted</p>
         </div>
       )}
 
       {/* Top-left: LIVE badge */}
       {status === 'playing' && (
-        <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 bg-red-600/90 backdrop-blur-sm px-2 py-0.5 rounded">
-          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-          <span className="text-[10px] font-bold text-white tracking-wide uppercase">Live</span>
+        <div className="absolute top-2.5 left-6 flex items-center gap-1.5 bg-cyan-500/20 backdrop-blur-sm border border-cyan-300/70 px-2 py-0.5 rounded-sm" style={{ boxShadow: '0 0 10px rgba(34,211,238,0.6)' }}>
+          <span className="w-1.5 h-1.5 rounded-full bg-cyan-200 animate-pulse" />
+          <span className="text-[10px] font-black text-cyan-50 tracking-[0.2em] uppercase font-display">LIVE</span>
         </div>
       )}
 
       {/* Bottom bar: channel name + mute toggle */}
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent px-3 pt-6 pb-2 flex items-end justify-between">
-        <p className="text-xs font-medium text-zinc-200 truncate">{channelName}</p>
+        <p className="text-[11px] font-semibold text-cyan-100 truncate font-hud tracking-wide">{channelName}</p>
         <button
           onClick={toggleMute}
-          className="text-zinc-400 hover:text-white transition-colors p-1"
+          className="text-cyan-300 hover:text-white transition-colors p-1"
           title={muted ? 'Unmute' : 'Mute'}
         >
           {muted ? <VolumeX size={14} /> : <Volume2 size={14} />}

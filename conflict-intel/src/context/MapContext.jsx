@@ -4,7 +4,7 @@ const MapContext = createContext(null)
 
 export function MapProvider({ children }) {
   const [selectedCoordinates, setSelectedCoordinates] = useState(null)
-  const [activeTab, setActiveTab] = useState('feed')
+  const [activeTab, setActiveTab] = useState('jarvis')
 
   // Switches to the map tab and pans to the given location.
   // Optional headline is forwarded so the map can show it in a popup.

@@ -13,14 +13,21 @@ L.Icon.Default.mergeOptions({
 })
 
 function createIncidentIcon(severity = 'medium') {
-  const colors = { high: '#ef4444', medium: '#f97316', low: '#eab308' }
+  // All incident markers use the cyan palette; severity encoded by brightness.
+  const colors = {
+    high:   '#67e8f9',
+    medium: '#22d3ee',
+    low:    '#0891b2',
+  }
   const color = colors[severity] || colors.medium
   return L.divIcon({
     className: '',
     html: `
       <div style="
         width:12px;height:12px;background:${color};border-radius:50%;
-        border:2px solid rgba(255,255,255,0.4);box-shadow:0 0 0 4px ${color}40;position:relative;
+        border:1.5px solid rgba(207,250,254,0.9);
+        box-shadow:0 0 0 3px ${color}55, 0 0 10px ${color};
+        position:relative;
       ">
         <div style="
           position:absolute;inset:-6px;border-radius:50%;
@@ -34,25 +41,25 @@ function createIncidentIcon(severity = 'medium') {
   })
 }
 
-// Pulsing blue crosshair for the feed-selected location
+// Pulsing cyan crosshair for the feed-selected location
 function createFocusIcon() {
   return L.divIcon({
     className: '',
     html: `
-      <div style="position:relative;width:20px;height:20px;">
+      <div style="position:relative;width:22px;height:22px;">
         <div style="
           position:absolute;inset:0;border-radius:50%;
-          background:#3b82f6;border:2px solid rgba(255,255,255,0.7);
-          box-shadow:0 0 0 5px rgba(59,130,246,0.3);
+          background:#67e8f9;border:2px solid rgba(207,250,254,0.95);
+          box-shadow:0 0 0 5px rgba(34,211,238,0.3), 0 0 16px rgba(34,211,238,0.9);
         "></div>
         <div style="
-          position:absolute;inset:-8px;border-radius:50%;
-          border:1.5px solid rgba(59,130,246,0.5);
+          position:absolute;inset:-10px;border-radius:50%;
+          border:1.5px solid rgba(34,211,238,0.6);
           animation:ping 1.2s cubic-bezier(0,0,0.2,1) infinite;
         "></div>
       </div>`,
-    iconSize: [20, 20],
-    iconAnchor: [10, 10],
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
     popupAnchor: [0, -14],
   })
 }
@@ -86,12 +93,13 @@ const mapEvents = [
 function popupStyle(children) {
   return (
     <div style={{
-      background: '#18181b',
-      border: '1px solid #3f3f46',
-      borderRadius: '8px',
+      background: 'rgba(11, 18, 32, 0.92)',
+      border: '1px solid rgba(34, 211, 238, 0.45)',
+      borderRadius: '4px',
       padding: '10px 12px',
-      maxWidth: '200px',
-      fontFamily: 'system-ui, sans-serif',
+      maxWidth: '220px',
+      fontFamily: 'Rajdhani, system-ui, sans-serif',
+      boxShadow: '0 0 14px rgba(34, 211, 238, 0.35), inset 0 0 10px rgba(34, 211, 238, 0.08)',
     }}>
       {children}
     </div>
@@ -102,17 +110,17 @@ export default function ConflictMap() {
   const { selectedCoordinates } = useMapContext()
 
   return (
-    <div className="flex flex-col h-full bg-zinc-950">
+    <div className="flex flex-col h-full bg-jarvis-bg">
       {/* Header */}
-      <div className="shrink-0 px-4 py-2.5 border-b border-zinc-800 flex items-center justify-between">
+      <div className="shrink-0 px-4 py-2.5 border-b border-cyan-500/25 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
-          <p className="text-[11px] font-semibold text-zinc-200 tracking-widest uppercase">Tactical Map</p>
+          <div className="w-2 h-2 rounded-full bg-cyan-300 animate-pulse" style={{ boxShadow: '0 0 6px #67e8f9' }} />
+          <p className="text-[11px] font-bold text-cyan-200 tracking-[0.25em] uppercase font-display">Tactical Map</p>
         </div>
-        <div className="flex items-center gap-3 text-[9px] text-zinc-600 uppercase tracking-wide">
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> High</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500 inline-block" /> Med</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500 inline-block" /> Low</span>
+        <div className="flex items-center gap-3 text-[9px] text-cyan-500/70 font-mono uppercase tracking-widest">
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-cyan-200 inline-block" style={{ boxShadow: '0 0 4px #67e8f9' }} /> High</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-cyan-400 inline-block" /> Med</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-cyan-700 inline-block" /> Low</span>
         </div>
       </div>
 
@@ -140,10 +148,10 @@ export default function ConflictMap() {
               <Popup closeButton={false}>
                 {popupStyle(
                   <>
-                    <p style={{ fontSize: '9px', color: '#71717a', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
+                    <p style={{ fontSize: '9px', color: '#67e8f9', textTransform: 'uppercase', letterSpacing: '0.18em', marginBottom: '4px', fontFamily: 'Share Tech Mono, monospace' }}>
                       {event.region} · {event.source}
                     </p>
-                    <p style={{ fontSize: '12px', color: '#e4e4e7', lineHeight: '1.4', margin: 0 }}>
+                    <p style={{ fontSize: '12px', color: '#e0f2fe', lineHeight: '1.4', margin: 0 }}>
                       {event.headline}
                     </p>
                   </>
@@ -161,10 +169,10 @@ export default function ConflictMap() {
               <Popup closeButton={false}>
                 {popupStyle(
                   <>
-                    <p style={{ fontSize: '9px', color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
+                    <p style={{ fontSize: '9px', color: '#67e8f9', textTransform: 'uppercase', letterSpacing: '0.18em', marginBottom: '4px', fontFamily: 'Share Tech Mono, monospace' }}>
                       Feed Alert · Geolocated
                     </p>
-                    <p style={{ fontSize: '12px', color: '#e4e4e7', lineHeight: '1.4', margin: 0 }}>
+                    <p style={{ fontSize: '12px', color: '#e0f2fe', lineHeight: '1.4', margin: 0 }}>
                       {selectedCoordinates.headline || 'Location from OSINT feed'}
                     </p>
                   </>

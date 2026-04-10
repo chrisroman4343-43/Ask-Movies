@@ -1,50 +1,26 @@
-import { useEffect, useState } from 'react'
-import { io } from 'socket.io-client'
 import { Zap, ExternalLink, MapPin, Loader2 } from 'lucide-react'
 import { useMapContext } from '../context/MapContext'
+import { useIntel } from '../context/IntelContext'
 
 function SkeletonCard() {
   return (
-    <div className="bg-zinc-900/50 border border-zinc-800/80 rounded-lg p-3 animate-pulse">
+    <div className="bg-cyan-500/[0.03] border border-cyan-500/20 rounded-md p-3 animate-pulse">
       <div className="flex items-center gap-2 mb-2">
-        <div className="h-2 w-16 bg-zinc-800 rounded" />
-        <div className="ml-auto h-2 w-20 bg-zinc-800 rounded" />
+        <div className="h-2 w-16 bg-cyan-500/20 rounded" />
+        <div className="ml-auto h-2 w-20 bg-cyan-500/20 rounded" />
       </div>
       <div className="space-y-1.5">
-        <div className="h-3 w-full bg-zinc-800 rounded" />
-        <div className="h-3 w-3/4 bg-zinc-800 rounded" />
+        <div className="h-3 w-full bg-cyan-500/20 rounded" />
+        <div className="h-3 w-3/4 bg-cyan-500/20 rounded" />
       </div>
     </div>
   )
 }
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
-
 export default function IntelFeed() {
-  const [alerts, setAlerts] = useState([])
-  const [connected, setConnected] = useState(false)
-  const [initialLoad, setInitialLoad] = useState(true)
+  const { alerts, connected } = useIntel()
   const { focusOnLocation } = useMapContext()
-
-  useEffect(() => {
-    const socket = io(BACKEND_URL, {
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      reconnectionAttempts: 5,
-    })
-
-    socket.on('connect', () => setConnected(true))
-
-    socket.on('intelAlert', (alert) => {
-      setAlerts((prev) => [alert, ...prev])
-      setInitialLoad(false)
-    })
-
-    socket.on('disconnect', () => setConnected(false))
-
-    return () => socket.disconnect()
-  }, [])
+  const initialLoad = alerts.length === 0
 
   const formatTime = (rawTimestamp) => {
     try {
@@ -72,31 +48,34 @@ export default function IntelFeed() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-zinc-950">
+    <div className="flex flex-col h-full bg-jarvis-bg">
       {/* Header */}
-      <div className="shrink-0 px-4 py-2.5 border-b border-zinc-800 flex items-center justify-between">
+      <div className="shrink-0 px-4 py-2.5 border-b border-cyan-500/25 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Zap size={13} className="text-yellow-500" />
-          <p className="text-[11px] font-semibold text-zinc-200 tracking-widest uppercase">OSINT Feed</p>
+          <Zap size={13} className="text-cyan-300" style={{ filter: 'drop-shadow(0 0 3px #67e8f9)' }} />
+          <p className="text-[11px] font-bold text-cyan-200 tracking-[0.25em] uppercase font-display">OSINT Feed</p>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-green-500 animate-pulse' : 'bg-zinc-600'}`} />
-          <p className="text-[9px] text-zinc-600 uppercase tracking-wide">
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-cyan-300 animate-pulse' : 'bg-zinc-600'}`}
+            style={{ boxShadow: connected ? '0 0 6px #67e8f9' : 'none' }}
+          />
+          <p className="text-[9px] text-cyan-500/70 font-mono uppercase tracking-widest">
             {connected ? 'Live' : 'Reconnecting'}
           </p>
         </div>
       </div>
 
       {/* Alerts list */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide py-2">
-        {/* Loading skeletons on first boot */}
-        {initialLoad && alerts.length === 0 ? (
+      <div className="flex-1 overflow-y-auto scrollbar-hide py-2 relative">
+        <div className="scan-line-overlay pointer-events-none" />
+        {initialLoad ? (
           <div className="space-y-1.5 px-3">
             {connected ? (
               <>
                 <div className="flex items-center justify-center gap-2 py-3">
-                  <Loader2 size={12} className="text-zinc-600 animate-spin" />
-                  <p className="text-[10px] text-zinc-600">Loading intelligence feed...</p>
+                  <Loader2 size={12} className="text-cyan-400 animate-spin" />
+                  <p className="text-[10px] text-cyan-500 font-mono tracking-widest uppercase">Loading intelligence feed…</p>
                 </div>
                 <SkeletonCard />
                 <SkeletonCard />
@@ -106,8 +85,8 @@ export default function IntelFeed() {
             ) : (
               <div className="flex items-center justify-center h-full py-8">
                 <div className="text-center">
-                  <Loader2 size={16} className="text-zinc-700 animate-spin mx-auto mb-2" />
-                  <p className="text-[11px] text-zinc-600">Connecting to server...</p>
+                  <Loader2 size={16} className="text-cyan-500 animate-spin mx-auto mb-2" />
+                  <p className="text-[11px] text-cyan-500/70 font-mono tracking-wider uppercase">Connecting to server…</p>
                 </div>
               </div>
             )}
@@ -119,24 +98,24 @@ export default function IntelFeed() {
               return (
                 <div
                   key={alert.id}
-                  className="group bg-zinc-900/50 border border-zinc-800/80 rounded-lg p-3 hover:border-zinc-700 hover:bg-zinc-900 transition-all"
+                  className="group bg-cyan-500/[0.03] border border-cyan-500/25 rounded-md p-3 hover:border-cyan-400/60 hover:bg-cyan-500/[0.07] transition-all animate-snap-in"
                 >
                   {/* Source + badges + timestamp row */}
                   <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-[9px] font-medium text-zinc-500 uppercase tracking-wide">
+                    <span className="text-[9px] font-mono text-cyan-400/80 uppercase tracking-widest">
                       {alert.source}
                     </span>
                     {alert.isBreaking && (
-                      <span className="text-[9px] font-bold bg-red-900/60 text-red-300 border border-red-800/50 px-1.5 py-0.5 rounded">
+                      <span className="text-[9px] font-bold bg-amber-500/20 text-amber-200 border border-amber-400/60 px-1.5 py-0.5 rounded tracking-wider">
                         BREAKING
                       </span>
                     )}
-                    <span className="ml-auto text-[9px] text-zinc-700 tabular-nums shrink-0">
+                    <span className="ml-auto text-[9px] text-cyan-600/70 font-mono tabular-nums shrink-0">
                       {formatDate(alert.timestamp)} {formatTime(alert.timestamp)}
                     </span>
                   </div>
 
-                  {/* Headline — clamped to 2 lines */}
+                  {/* Headline */}
                   {alert.link ? (
                     <a
                       href={alert.link}
@@ -144,21 +123,21 @@ export default function IntelFeed() {
                       rel="noopener noreferrer"
                       className="group/link flex items-start gap-1.5"
                     >
-                      <p className="text-[12px] font-medium text-zinc-300 leading-snug group-hover/link:text-white transition-colors flex-1 line-clamp-2">
+                      <p className="text-[12px] font-medium text-cyan-100 leading-snug group-hover/link:text-white transition-colors flex-1 line-clamp-2 font-hud">
                         {alert.headline}
                       </p>
                       <ExternalLink
                         size={10}
-                        className="text-zinc-700 group-hover/link:text-zinc-400 transition-colors mt-0.5 shrink-0"
+                        className="text-cyan-500/60 group-hover/link:text-cyan-200 transition-colors mt-0.5 shrink-0"
                       />
                     </a>
                   ) : (
-                    <p className="text-[12px] font-medium text-zinc-300 leading-snug line-clamp-2">
+                    <p className="text-[12px] font-medium text-cyan-100 leading-snug line-clamp-2 font-hud">
                       {alert.headline}
                     </p>
                   )}
 
-                  {/* View on Map button — thumb-friendly touch target */}
+                  {/* View on Map button */}
                   {hasCoords && (
                     <button
                       onClick={(e) => {
@@ -166,7 +145,7 @@ export default function IntelFeed() {
                         e.stopPropagation()
                         focusOnLocation(alert.lat, alert.lng, alert.headline)
                       }}
-                      className="mt-2 flex items-center gap-1.5 text-[9px] font-medium text-zinc-600 hover:text-blue-400 active:text-blue-300 transition-colors uppercase tracking-wide py-1.5 -mx-1 px-1 rounded"
+                      className="mt-2 flex items-center gap-1.5 text-[9px] font-mono text-cyan-400/80 hover:text-cyan-200 active:text-white transition-colors uppercase tracking-widest py-1 -mx-1 px-1 rounded"
                     >
                       <MapPin size={9} />
                       View on Map
